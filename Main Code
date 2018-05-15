@@ -1,0 +1,167 @@
+clear all;
+% * Drag coefficent table
+vint=[0 11 22 33 44 55];
+Cdint=[0.5 0.5 0.5 0.4 0.28 0.23];
+% * Set physical parameters (mass, Cd, etc.)
+Cd = interp1(vint,Cdint,0.01);
+area = 0.0043;
+grav = [0 -9.8];
+mass = 0.145;
+rho = 1.2;
+air_const = -0.5*Cd*rho*area/mass;
+% * Set score variables
+rscore=0;
+lscore=0;
+Right=num2str(rscore);
+Left=num2str(lscore);
+h_fig = figure;
+% * Main loop
+while 1
+    % * Set initial paddle position
+    leftPaddle = 18;
+    rightPaddle = 18;
+    % * Set timestep and initial ball position
+    tau = 0.01;
+    ypos = 25;
+    xpos = 25;
+    % * Setting initial launch angle
+    LorR=rand;
+    if LorR >0.5
+        theta = rand*90 - 45;
+    else
+        theta = rand*90 - 225;
+    end
+    % * First step of position and velocity
+    r1 = [xpos ypos];
+    speed = 100;
+    v1 = [speed*cos(theta*pi/180) ...
+        speed*sin(theta*pi/180)];
+    % Setting constants for bouncing, position, velocity, and increments
+    xHit = 0;
+    yHit = 0;
+    r = r1;  v = v1; c = 1;
+    istep=1;
+    xstep=1;
+    ystep=1;
+    reset = 0;
+    while reset == 0
+        % * Checking for paddle movement
+        key = get(gcf, 'CurrentCharacter')
+        if (key == '8' & rightPaddle <= 43)
+            rightPaddle = rightPaddle + 3;
+        elseif (key == '2' & rightPaddle >= 0)
+            rightPaddle = rightPaddle - 3;
+        elseif key == 'w' & leftPaddle <= 43
+            leftPaddle = leftPaddle + 3;
+        elseif key == 's' & leftPaddle >= 0
+            leftPaddle = leftPaddle - 3;
+        else
+        end
+        figure(h_fig);
+        set(gcf,'CurrentCharacter','0');
+        % * Y-boundary bounce
+        if yHit == 1;
+            yHit = 0;
+            r = [xpos ypos];  v = [v(1) -c*v(2)];
+            ystep = 1;
+            istep = 1;
+        end
+        % * X-boundary bounce
+        if xHit == 1;
+            xHit = 0;
+            r = [xpos ypos];  v = [-c*v(1) v(2)];
+            xstep = 1;
+            istep = 1;
+        end
+        % * Checking for paddle movement
+        key = get(gcf, 'CurrentCharacter')
+        if (key == '8' & rightPaddle <= 43)
+            rightPaddle = rightPaddle + 3;
+        elseif (key == '2' & rightPaddle >= 0)
+            rightPaddle = rightPaddle - 3;
+        elseif key == 'w' & leftPaddle <= 43
+            leftPaddle = leftPaddle + 3;
+        elseif key == 's' & leftPaddle >= 0
+            leftPaddle = leftPaddle - 3;
+        else
+        end
+        figure(h_fig);
+        set(gcf,'CurrentCharacter','0');
+        % * Motion of ball
+        x(istep)=r(1);
+        y(istep)=r(2);
+        acc=(air_const*norm(v)*v)+grav;
+        r=r+((tau/2)*((v+(tau*acc))+v));
+        v=v+(tau*acc);
+        % * Checks for impacts
+        if (y(istep)>=49 && istep > 3) || (y(istep)<=1 && istep > 3)
+            yHit = 1;
+            ypos = y(istep);
+            xpos = x(istep);
+            c = ystep/100;
+        end
+        if (y(istep) >= leftPaddle) && (y(istep) <= leftPaddle + 7) && (x(istep) < 1) && istep > 5
+            xHit = 1;
+            ypos = y(istep);
+            xpos = x(istep);
+            c = xstep/40;
+        end
+        if (y(istep) >= rightPaddle) && (y(istep) <= rightPaddle + 7) && (x(istep) >= 49) && istep > 5
+            xHit = 1;
+            ypos = y(istep);
+            xpos = x(istep);
+            c = xstep/40;
+        end
+        % * Scoring & reset
+        if (x(istep)>51)
+            lscore=lscore+1;
+            Left = num2str(lscore);
+            reset = 1;
+        end
+        if (x(istep)<-1)
+            rscore=rscore+1;
+            Right = num2str(rscore);
+            reset = 1;
+        end
+        % * Checking for paddle movement
+        key = get(gcf, 'CurrentCharacter')
+        if (key == '8' & rightPaddle <= 43)
+            rightPaddle = rightPaddle + 3;
+        elseif (key == '2' & rightPaddle >= 0)
+            rightPaddle = rightPaddle - 3;
+        elseif key == 'w' & leftPaddle <= 43
+            leftPaddle = leftPaddle + 3;
+        elseif key == 's' & leftPaddle >= 0
+            leftPaddle = leftPaddle - 3;
+        else
+        end
+        figure(h_fig);
+        set(gcf,'CurrentCharacter','0');
+        % * Plot creation
+        plot(x(istep),y(istep),'bo')
+        title(['Physicist Pong: Left = ' Left ' Right = ' Right]);
+        x=[0,50];
+        y=[0,0];
+        line(x,y,'color','yellow','linewidth',4);
+        x=[0,50];
+        y=[50,50];
+        line(x,y,'color','yellow','linewidth',4);
+        xl=[0, 0];
+        yl=[leftPaddle,leftPaddle + 7];
+        line(xl,yl,'color','black','linewidth',4);
+        xr=[50,50];
+        yr=[rightPaddle,rightPaddle + 7];
+        line(xr,yr,'color','black','linewidth',4);
+        axis([0 50 0 50])
+        axis off
+        key = 0;
+        % * Pause so motion is visible
+        pause(0.001)
+        % * Incrementation
+        istep = istep+1;
+        ystep = ystep+1;
+        xstep = xstep+1;
+    end
+    % * Pause for reset
+    pause(1)
+end
